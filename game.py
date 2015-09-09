@@ -21,7 +21,7 @@ def logged(func):
 
 @logged
 def parse_to_atoms(molecule):
-    atoms = []
+    atoms = set([])
     atom = ""
     molecule = iter(molecule)
     c = next(molecule)
@@ -30,7 +30,7 @@ def parse_to_atoms(molecule):
             if c.isupper():
                 atom = c
             else:
-                raise ValueError(c)
+                raise ValueError("mismatch formula")
 
             c = next(molecule)
             if c.islower():
@@ -50,7 +50,7 @@ def parse_to_atoms(molecule):
         except StopIteration:
             break
         finally:
-            atoms.append(atom)
+            atoms.add(atom)
             atom = ""
 
     return atoms            
@@ -63,7 +63,7 @@ def get_atoms(molecules):
     """
     atoms = set([])
     for molecule in molecules:
-        atoms = atoms.union(set(parse_to_atoms(molecule)))
+        atoms = atoms.union(parse_to_atoms(molecule))
     return atoms
 
 
@@ -96,6 +96,8 @@ def main(atoms, molecules):
         try:
             user_molecule = input("Create molecule:")
             logging.debug("user input `%s`", user_molecule)
+            # check input
+            parse_to_atoms(user_molecule)
 
             try:
                 molecules.pop(possible_molecules.index(user_molecule))
@@ -119,6 +121,9 @@ def main(atoms, molecules):
                 print("Found it!")
                 logging.debug("left molecules %s", molecules)
             logging.debug("score %s", score)
+        except (ValueError, StopIteration):
+            logging.warn("bad formula input `%s`", user_molecule)
+            pass
         except KeyboardInterrupt:
             break
     return score
