@@ -12,20 +12,59 @@ def logged(func):
     def with_logging(*args, **kwargs):
         s_args = ", ".join(map(str, args))
         s_kwargs = ", ".join("%s=%s" % kwarg for kwarg in kwargs.items())
-        logging.debug("Called %s(%s, %s)", func.__name__, s_args, s_kwargs)
-        return func(*args, **kwargs)
+        logging.debug("Calling %s(%s, %s)", func.__name__, s_args, s_kwargs)
+        retval = func(*args, **kwargs)
+        logging.debug("Returning %s(%s, %s) = %s", func.__name__, s_args, s_kwargs, retval)
+        return retval
     return with_logging
 
 
-ATOMS = "H,Cl,Na,S,O,N,C"
+@logged
+def parse_to_atoms(molecule):
+    atoms = []
+    atom = ""
+    molecule = iter(molecule)
+    c = next(molecule)
+    while True:
+        try:
+            if c.isupper():
+                atom = c
+            else:
+                raise ValueError(c)
+
+            c = next(molecule)
+            if c.islower():
+                atom = atom + c
+                c = next(molecule)
+                if c.islower():
+                    atom = atom + c
+                    c = next(molecule)
+
+            if c.isdigit():
+                c = next(molecule)
+                while True:
+                    if c.isdigit():
+                        pass
+                    else:
+                        break
+        except StopIteration:
+            break
+        finally:
+            atoms.append(atom)
+            atom = ""
+
+    return atoms            
 
 
 @logged
-def get_atoms(atoms):
+def get_atoms(molecules):
     """
     Parse atoms.
     """
-    return atoms.split(',')
+    atoms = set([])
+    for molecule in molecules:
+        atoms = atoms.union(set(parse_to_atoms(molecule)))
+    return atoms
 
 
 @logged
@@ -39,6 +78,7 @@ def get_molecules(input_file):
     for line in fi.readlines():
         molecule = line.strip()
         molecules.append(molecule)
+        print(parse_to_atoms(molecule))
     return molecules
 
 
@@ -88,7 +128,7 @@ if __name__ == "__main__":
     import sys
     logging.basicConfig(level=logging.DEBUG)
     # Preparing game
-    atoms = get_atoms(ATOMS)
     molecules = get_molecules(sys.argv[1])
+    atoms = get_atoms(molecules)
     score = main(atoms, molecules)
     print("Final score:", score)

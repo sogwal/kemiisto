@@ -13,7 +13,10 @@ class TestGame(unittest.TestCase):
     def test_get_molecules(self):
         assert get_molecules("test.txt") == ["NaCl", "H2O"]
 
-    @unittest.skip
-    def test_main(self):
-        atoms = []
-        molecules = []
+#    @unittest.skip
+#    @unittest.mock.patch(input)
+#    def test_main(self):
+#        atoms = []
+#        molecules = []
+#        main([], [])
+
