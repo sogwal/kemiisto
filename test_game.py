@@ -25,10 +25,22 @@ class TestGame(unittest.TestCase):
         with mock.patch.object(builtins, 'input', mock.Mock(side_effect=['H2O', 'H2O2', KeyboardInterrupt])):
             assert main(list(atoms), list(molecules)) == 2
 
+        with mock.patch.object(builtins, 'input', mock.Mock(side_effect=['H2', 'H2O', 'H2O2', KeyboardInterrupt])):
+            assert main(list(atoms), list(molecules)) == 2
+
+        with mock.patch.object(builtins, 'input', mock.Mock(side_effect=['H2', 'H2O', '2O2','H2O2', KeyboardInterrupt])):
+            assert main(list(atoms), list(molecules)) == 2
+
         with mock.patch.object(builtins, 'input', mock.Mock(side_effect=['H2O', KeyboardInterrupt])):
             assert main(list(atoms), list(molecules)) == 1
 
+        with mock.patch.object(builtins, 'input', mock.Mock(side_effect=['H2O', 'H2O2', 'H',KeyboardInterrupt])):
+            assert main(list(atoms), list(molecules)) == 1
+
         with mock.patch.object(builtins, 'input', mock.Mock(side_effect=['NaCl', 'H2O', KeyboardInterrupt])):
+            assert main(list(atoms), list(molecules)) == 0
+
+        with mock.patch.object(builtins, 'input', mock.Mock(side_effect=['O2', 'NaCl', 'H2O', KeyboardInterrupt])):
             assert main(list(atoms), list(molecules)) == 0
 
         with mock.patch.object(builtins, 'input', mock.Mock(side_effect=[KeyboardInterrupt])):
