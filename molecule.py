@@ -3,7 +3,7 @@
 import logging
 
 from util import logged
-
+from collections import defaultdict
 
 class Molecule(dict):
     """
@@ -21,9 +21,9 @@ class Molecule(dict):
     @staticmethod
     @logged
     def parse_to_atoms(molecule):
-        atoms = dict()
+        atoms = defaultdict(int)
         atom = ""
-        number = ""
+        s_number = ""
         molecule = iter(molecule)
         c = next(molecule)
         while True:
@@ -42,22 +42,23 @@ class Molecule(dict):
                         c = next(molecule)
 
                 if c.isdigit():
-                    number = number + c
+                    s_number = s_number + c
                     c = next(molecule)
                     while True:
                         if c.isdigit():
-                            number = number + c
+                            s_number = s_number + c
                         else:
                             break
             except StopIteration:
                 break
             finally:
-                if number:
-                    atoms[atom] = int(number)
+                if s_number:
+                    atoms[atom] += int(s_number)
                 else:
-                    atoms[atom] = 1
+                    atoms[atom] += 1
+
                 atom = ""
-                number = ""
+                s_number = ""
 
         return atoms
 

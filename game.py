@@ -48,13 +48,13 @@ class Game(object):
                     if possible_molecules:
                         print("You are on the right way")
                         logging.debug("possible molecules %s", possible_molecules)
-                        continue
-
-                    score = score - 1
+                        score = score - 1
+                    else:
+                        score = score - 2
                     print("Try it again")
                 else:
                     # reset
-                    score = score + 1
+                    score = score + 2
                     print("Found it!")
                     logging.debug("left molecules %s", molecules)
                 logging.debug("score %s", score)
