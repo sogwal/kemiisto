@@ -3,16 +3,15 @@
 import logging
 
 from util import logged
-from collections import OrderedDict
 
 
-class Molecule(OrderedDict):
+class Molecule(dict):
     """
     """
     def __str__(self):
         return "<%s %s>" % (self.__class__.__name__, self)
 
-    def contains(self, other):
+    def issubset(self, other):
         for atom, number in other.items():
             if atom not in self or number > self[atom]:
                 return False
@@ -22,7 +21,7 @@ class Molecule(OrderedDict):
     @staticmethod
     @logged
     def parse_to_atoms(molecule):
-        atoms = OrderedDict()
+        atoms = dict()
         atom = ""
         number = ""
         molecule = iter(molecule)

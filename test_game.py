@@ -2,7 +2,6 @@
 
 import unittest
 import mock
-from collections import OrderedDict
 
 from game import Game
 from molecule import Molecule
@@ -14,9 +13,9 @@ except ImportError:
     import builtins
 
 
-NaCl = OrderedDict([("Na", 1), ("Cl", 1)])
-H2O = OrderedDict([("H", 2), ("O", 1)])
-H2O2 = OrderedDict([("H", 2), ("O", 2)])
+NaCl = dict([("Na", 1), ("Cl", 1)])
+H2O = dict([("H", 2), ("O", 1)])
+H2O2 = dict([("H", 2), ("O", 2)])
 
 
 class TestGame(unittest.TestCase):

@@ -32,7 +32,6 @@ class Game(object):
         score = 0
         print("You have these atoms:", atoms)
 
-        possible_molecules = molecules
         while True:
             # Main game loop
             try:
@@ -41,29 +40,26 @@ class Game(object):
                 # check input
                 user_molecule = Molecule.parse_to_atoms(s_user_molecule)
                 try:
-                    molecules.pop(possible_molecules.index(user_molecule))
+                    molecules.pop(molecules.index(user_molecule))
                 except ValueError:
                     possible_molecules = [molecule
-                                          for molecule in possible_molecules
-                                          if molecule.contains(user_molecule)]
+                                          for molecule in molecules
+                                          if molecule.issubset(user_molecule)]
                     if possible_molecules:
                         print("You are on the right way")
                         logging.debug("possible molecules %s", possible_molecules)
                         continue
 
-                    # reset
-                    possible_molecules = molecules
                     score = score - 1
                     print("Try it again")
                 else:
                     # reset
-                    possible_molecules = molecules
                     score = score + 1
                     print("Found it!")
                     logging.debug("left molecules %s", molecules)
                 logging.debug("score %s", score)
             except (ValueError, StopIteration):
-                logging.warn("bad formula input `%s`", user_molecule)
+                logging.warn("bad formula input `%s`", s_user_molecule)
                 pass
             except KeyboardInterrupt:
                 break
