@@ -29,3 +29,4 @@ class TestMolecule(unittest.TestCase):
         assert Molecule(NaCl).issubset(Molecule(dict([("Na", 2), ("Cl", 1)]))) == False
         assert Molecule(H2O).issubset(Molecule(H2O2)) == False
         assert Molecule(H2O2).issubset(Molecule(H2O)) == True
+        assert Molecule(H2O).issubset(Molecule(dict([("H", 1)]))) == True 

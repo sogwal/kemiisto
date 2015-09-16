@@ -4,15 +4,18 @@ Chemistry game prototyping.
 """
 
 import logging
+import random
 from util import logged
 from molecule import Molecule
 
+BOARD_SIZE = 9
 
 class Game(object):
     @logged
     def __init__(self, molecules_file):
         self.molecules = Molecule.get_molecules(molecules_file)
         self.atoms = self.get_atoms(self.molecules)
+        self.board = self.board(BOARD_SIZE, self.atoms)
 
     @logged
     def get_atoms(self, molecules):
@@ -20,7 +23,7 @@ class Game(object):
         """
         atoms = set([])
         for molecule in molecules:
-            atoms = atoms.union(molecule.keys())
+            atoms = atoms.union(molecule.items())
         return atoms
 
     @staticmethod
@@ -32,7 +35,7 @@ class Game(object):
         score = 0
         print("You have these atoms:", atoms)
 
-        while True:
+        while molecules:
             # Main game loop
             try:
                 s_user_molecule = input("Create molecule:")
@@ -53,17 +56,42 @@ class Game(object):
                         score = score - 2
                     print("Try it again")
                 else:
-                    # reset
                     score = score + 2
                     print("Found it!")
                     logging.debug("left molecules %s", molecules)
                 logging.debug("score %s", score)
             except (ValueError, StopIteration):
                 logging.warn("bad formula input `%s`", s_user_molecule)
+                score = score - 3
                 pass
             except KeyboardInterrupt:
                 break
+        else:
+            logging.debug("Empty molecules")
+            print("You are finished!")
         return score
+
+    @logged
+    def board(self, size, atoms):
+        board = list()
+        atoms = list(atoms)
+        for _ in range(BOARD_SIZE):
+            row = list()
+            for _ in range(BOARD_SIZE):
+                rand_atom = atoms[random.randint(0, len(atoms) - 1)]
+                row.append(rand_atom)
+            board.append(row)
+
+        return board
+
+    @logged
+    def print_board(self):
+        print("-"*(BOARD_SIZE*(2*7+2)+1))
+        for row in self.board:
+            print("|\t"+"\t|\t".join(row)+"\t|")
+            print("-"*(BOARD_SIZE*(2*7+2)+1))
+
+       # print("\n".join(map("\t|\t".join, self.board)))
 
 
 if __name__ == "__main__":
@@ -71,5 +99,6 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     # Preparing game
     game = Game(sys.argv[1])
+    game.print_board()
     score = game.main(game.atoms, game.molecules)
     print("Final score:", score)

@@ -9,9 +9,11 @@ class Molecule(dict):
     """
     """
     def __str__(self):
-        return "<%s %s>" % (self.__class__.__name__, self)
+        return "<%s %s>" % (self.__class__.__name__, super(Molecule, self))
 
+    @logged
     def issubset(self, other):
+        logging.debug("issubset")
         for atom, number in other.items():
             if atom not in self or number > self[atom]:
                 return False
@@ -21,13 +23,15 @@ class Molecule(dict):
     @staticmethod
     @logged
     def parse_to_atoms(molecule):
+        logging.debug("Parsing `%s`", molecule)
         atoms = defaultdict(int)
-        atom = ""
-        s_number = ""
         molecule = iter(molecule)
         c = next(molecule)
         while True:
+            atom = ""
+            number = ""
             try:
+
                 if c.isupper():
                     atom = c
                 else:
@@ -42,23 +46,21 @@ class Molecule(dict):
                         c = next(molecule)
 
                 if c.isdigit():
-                    s_number = s_number + c
+                    number = c
+
                     c = next(molecule)
                     while True:
                         if c.isdigit():
-                            s_number = s_number + c
+                            number = number + c
                         else:
                             break
             except StopIteration:
                 break
             finally:
-                if s_number:
-                    atoms[atom] += int(s_number)
+                if number:
+                    atoms[atom] += int(number)
                 else:
                     atoms[atom] += 1
-
-                atom = ""
-                s_number = ""
 
         return atoms
 
