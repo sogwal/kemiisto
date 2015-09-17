@@ -17,10 +17,11 @@ CHECKED = "X"
 
 class Game(object):
     @logged
-    def __init__(self, molecules_file):
+    def __init__(self, molecules_file, board_size):
         self.molecules = self.get_molecules(molecules_file)
         self.atoms = self.get_atoms(self.molecules)
-        self.board = self.board(BOARD_SIZE, self.atoms)
+        self.board = self.board(board_size, self.atoms)
+        self.size = board_size
 
     @staticmethod
     @logged
@@ -48,7 +49,7 @@ class Game(object):
         return molecules
 
     @logged
-    def main(self, atoms, molecules):
+    def main(self, board, atoms, molecules):
         """
         Main game function.
         """
@@ -57,16 +58,16 @@ class Game(object):
         partial_indeces = list()
         # Main game loop
         while molecules:
-            self.print_board()
+            self.print_board(self.size)
             try:
                 s_user_input = input("Create molecule:")
                 logging.debug("user input `%s`", s_user_input)
                 indeces = self.parse_user_input(s_user_input)
                 partial_indeces.extend(indeces)
-                user_molecule = self.find_molecule_in_board(partial_indeces)
+                user_molecule = self.find_molecule_in_board(self.board, partial_indeces)
                 try:
                     molecules.pop(molecules.index(user_molecule))
-                    self.mark_molecules_in_board(partial_indeces, CHECKED)
+                    self.mark_molecules_in_board(self.board, partial_indeces, CHECKED)
                 except ValueError:
                     possible_molecules = [molecule
                                           for molecule in molecules
@@ -74,9 +75,9 @@ class Game(object):
                     if possible_molecules:
                         print("You are on the right way")
                         logging.debug("possible molecules %s", possible_molecules)
-                        self.mark_molecules_in_board(partial_indeces, MARKED)
+                        self.mark_molecules_in_board(self.board, partial_indeces, MARKED)
                     else:
-                        self.mark_molecules_in_board(partial_indeces, EMPTY)
+                        self.mark_molecules_in_board(self.board, partial_indeces, EMPTY)
                         partial_indeces = list()
                         score = score - 1
                     print("Try it again")
@@ -96,50 +97,48 @@ class Game(object):
             logging.debug("Empty molecules")
         return score
 
+    @staticmethod
     @logged
-    def board(self, size, atoms):
-        board = list()
+    def board(size, atoms):
         atoms = list(atoms)
-        for _ in range(BOARD_SIZE):
-            row = list()
-            for _ in range(BOARD_SIZE):
-                rand_atom = atoms[random.randint(0, len(atoms) - 1)]
-                row.append([rand_atom, EMPTY])
-            board.append(row)
-
-        return board
+        return tuple(
+                     tuple([random.choice(atoms), EMPTY] for _ in range(size))
+                     for _ in range(size))
 
     @logged
-    def print_board(self):
+    def print_board(self, size):
         logging.debug("%s", self.board)
-        print("\t\t"+"\t\t".join(str(ind) for ind in range(BOARD_SIZE)))
-        print("\t"+"-"*(BOARD_SIZE*(2*7+2)+1))
+        print("\t\t"+"\t\t".join(str(ind) for ind in range(size)))
+        print("\t"+"-"*(size*(2*7+2)+1))
         for ind, row in enumerate(self.board):
             print("\t%s" % ind + "|\t"+"\t|\t".join("(%s%d)" % r if s == CHECKED else "[%s%d]" % r if s == MARKED else "%s%d" % r for r, s in row)+"\t|")
-            print("\t"+"-"*(BOARD_SIZE*(2*7+2)+1))
+            print("\t"+"-"*(size*(2*7+2)+1))
 
-       # print("\n".join(map("\t|\t".join, self.board)))
+        # print("\n".join(map("\t|\t".join, self.board)))
 
+    @staticmethod
     @logged
-    def parse_user_input(self, user_input):
-        return list(map(lambda x: (int(x[0]), int(x[1])), map(lambda x: x.split(":"), user_input.split(" "))))
+    def parse_user_input(user_input):
+        return tuple(map(lambda x: (int(x[0]), int(x[1])), map(lambda x: x.split(":"), user_input.split(" "))))
 
+    @staticmethod
     @logged
-    def find_molecule_in_board(self, indeces):
+    def find_molecule_in_board(board, indeces):
         atoms = list()
         for x, y in indeces:
-            atoms.append(self.board[x][y][0])
+            atoms.append(board[x][y][0])
         return Molecule(atoms)
 
+    @staticmethod
     @logged
-    def mark_molecules_in_board(self, indeces, mark):
+    def mark_molecules_in_board(board, indeces, mark):
         for x, y in indeces:
-            self.board[x][y][1] = mark
+            board[x][y][1] = mark
 
 if __name__ == "__main__":
     import sys
     logging.basicConfig(level=logging.DEBUG)
     # Preparing game
-    game = Game(sys.argv[1])
-    score = game.main(game.atoms, game.molecules)
+    game = Game(sys.argv[1], BOARD_SIZE)
+    score = game.main(game.board, game.atoms, game.molecules)
     print("Final score:", score)
