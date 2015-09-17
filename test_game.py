@@ -5,7 +5,6 @@ import mock
 
 from game import Game
 from molecule import Molecule
-# get_atoms, get_molecules, game.main
 
 try:
     import __builtin__ as builtins
@@ -24,6 +23,9 @@ class TestGame(unittest.TestCase):
             game = Game("")
         assert game.get_atoms([Molecule(NaCl), Molecule(H2O)]) == set([("H", 2), ("Na", 1), ("O", 1), ("Cl", 1)])
         assert game.get_atoms([Molecule(H2O), Molecule(H2O2)]) == set([("H", 2), ("O", 1), ("O", 2)])
+
+    def test_molecule_get_molecules(self):
+        assert Game.get_molecules("test.txt") == [Molecule(NaCl), Molecule(H2O)]
 
     def test_game_main(self):
         atoms = ['H', 'O']
@@ -56,3 +58,15 @@ class TestGame(unittest.TestCase):
 
         with mock.patch.object(builtins, 'input', mock.Mock(side_effect=['NaCl', 'H3O', KeyboardInterrupt])):
             assert game.main(list(atoms), list(molecules)) == -4
+
+    def test_game_parse_user_input(self):
+        pass
+
+    def test_game_board(self):
+        pass
+
+    def test_game_find_molecule_in_board(self):
+        pass
+
+    def test_game_mark_molecules_in_board(self):
+        pass

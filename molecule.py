@@ -9,7 +9,7 @@ class Molecule(dict):
     """
     """
     def __str__(self):
-        return "<%s %s>" % (self.__class__.__name__, super(Molecule, self))
+        return "<%s %s>" % (self.__class__.__name__, super(Molecule, self).__str__())
 
     @logged
     def issubset(self, other):
@@ -63,18 +63,3 @@ class Molecule(dict):
                     atoms[atom] += 1
 
         return atoms
-
-    @staticmethod
-    @logged
-    def get_molecules(input_file):
-        """
-        Load molecules.
-        """
-        logging.debug("atoms loading from %s", input_file)
-        fi = open(input_file, 'r')
-        molecules = []
-        for line in fi.readlines():
-            s_molecule = line.strip()
-            atoms = Molecule.parse_to_atoms(s_molecule)
-            molecules.append(Molecule(atoms))
-        return molecules

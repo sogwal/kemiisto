@@ -13,10 +13,6 @@ H2SO4 = dict([("H", 2), ("S", 1), ("O", 4)])
 
 
 class TestMolecule(unittest.TestCase):
-
-    def test_molecule_get_molecules(self):
-        assert Molecule.get_molecules("test.txt") == [Molecule(NaCl), Molecule(H2O)]
-
     def test_molecule_parse_to_atoms(self):
         assert Molecule.parse_to_atoms("NaCl") == NaCl
         assert Molecule.parse_to_atoms("H2O") == H2O
@@ -30,3 +26,4 @@ class TestMolecule(unittest.TestCase):
         assert Molecule(H2O).issubset(Molecule(H2O2)) == False
         assert Molecule(H2O2).issubset(Molecule(H2O)) == True
         assert Molecule(H2O).issubset(Molecule(dict([("H", 1)]))) == True 
+        
