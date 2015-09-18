@@ -5,11 +5,13 @@ import logging
 from util import logged
 from collections import defaultdict
 
+
 class Molecule(dict):
     """
     """
     def __str__(self):
-        return "<%s %s>" % (self.__class__.__name__, super(Molecule, self).__str__())
+        return "<%s %s>" % (self.__class__.__name__,
+                            super(Molecule, self).__str__())
 
     @logged
     def issubset(self, other):
@@ -22,7 +24,7 @@ class Molecule(dict):
 
     @staticmethod
     @logged
-    def parse_to_atoms(molecule):
+    def parse_from_string_to_atoms(molecule):
         logging.debug("Parsing `%s`", molecule)
         atoms = defaultdict(int)
         molecule = iter(molecule)

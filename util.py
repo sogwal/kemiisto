@@ -11,6 +11,7 @@ def logged(func):
         s_kwargs = ", ".join("%s=%s" % kwarg for kwarg in kwargs.items())
         logging.debug("Calling %s(%s, %s)", func.__name__, s_args, s_kwargs)
         retval = func(*args, **kwargs)
-        logging.debug("Returning %s(%s, %s) = %s", func.__name__, s_args, s_kwargs, retval)
+        logging.debug("Returning %s(%s, %s) = %s",
+                      func.__name__, s_args, s_kwargs, retval)
         return retval
     return with_logging
