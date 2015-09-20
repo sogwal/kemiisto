@@ -19,3 +19,6 @@ class TestMolecule(unittest.TestCase):
         assert Molecule(H2O).issubset(Molecule(H2O2)) == False
         assert Molecule(H2O2).issubset(Molecule(H2O)) == True
         assert Molecule(H2O).issubset(Molecule([H2])) == True
+
+    def test_molecule_hash_key(self):
+        raise

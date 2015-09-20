@@ -20,7 +20,6 @@ class Board(tuple):
     def __repr__(self):
         return "<Board size=%sx%s>" % (self.size, self.size)
 
-
     @staticmethod
     @logged
     def generate(size, atoms):
@@ -59,8 +58,12 @@ class Board(tuple):
             if one[0] == two[0] + nbh[0] and one[1] == two[1] + nbh[1]:
                 return True
 
-        return False 
+        return False
 
     @logged
     def is_path(self, *indeces):
         return all(self.neighbours(one, two) for one, two in zip(indeces[:-1], indeces[1:]))
+
+    @logged
+    def all_marked(self, mark=CHECKED):
+        return all(all(cell == CHECKED for cell in row) for row in self)

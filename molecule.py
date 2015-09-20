@@ -61,3 +61,6 @@ class Molecule(dict):
                     atoms[atom] += 1
 
         return atoms
+
+    def hash_key(self):
+        return "".join(sorted(self.keys()))

@@ -46,3 +46,6 @@ class TestBoard(unittest.TestCase):
         assert board.is_path((1, 1), (0, 1), (0, 0), (2, 1)) == False
         assert board.is_path((1, 1), (0, 0)) == False
         assert board.is_path((2, 2), (0, 0)) == False
+
+    def test_board_all_marked(self):
+        raise

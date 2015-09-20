@@ -5,10 +5,11 @@ Chemistry game prototyping.
 
 import logging
 from util import logged
+from collections import defaultdict
 from molecule import Molecule
 from board import Board, EMPTY, MARKED, CHECKED
 
-BOARD_SIZE = 9
+BOARD_SIZE = 5
 
 
 class Game(object):
@@ -24,8 +25,9 @@ class Game(object):
         """
         """
         atoms = set([])
-        for molecule in molecules:
-            atoms = atoms.union(molecule.items())
+        for molecule_list in molecules.values():
+            for molecule in molecule_list:
+                atoms = atoms.union(molecule.items())
         return atoms
 
     @staticmethod
@@ -36,11 +38,12 @@ class Game(object):
         """
         logging.debug("atoms loading from %s", input_file)
         fi = open(input_file, 'r')
-        molecules = []
+        molecules = defaultdict(list)
         for line in fi.readlines():
             s_molecule = line.strip()
             atoms = Molecule.parse_from_string_to_atoms(s_molecule)
-            molecules.append(Molecule(atoms))
+            molecule = Molecule(atoms)
+            molecules[molecule.hash_key()].append(molecule)
         return molecules
 
     @logged
@@ -51,11 +54,15 @@ class Game(object):
         score = 0
         partial_indeces = list()
         # Main game loop
-        while self.molecules:
+        while not self.board.all_marked(CHECKED):
             self.board.print_board()
             try:
                 s_user_input = input("Create molecule:")
                 logging.debug("user input `%s`", s_user_input)
+            except KeyboardInterrupt:
+                break
+
+            try:
                 indeces = self.parse_user_input(s_user_input)
                 try:
                     if not self.board.is_path(partial_indeces[-1], *indeces):
@@ -64,33 +71,39 @@ class Game(object):
                     pass
                 partial_indeces.extend(indeces)
                 user_molecule = self.board.find_molecule_in_board(partial_indeces)
-                try:
-                    self.molecules.pop(self.molecules.index(user_molecule))
-                    self.board.mark_molecules_in_board(partial_indeces, CHECKED)
-                except ValueError:
-                    possible_molecules = [molecule
-                                          for molecule in self.molecules
-                                          if molecule.issubset(user_molecule)]
-                    if possible_molecules:
-                        print("You are on the right way")
-                        logging.debug("possible molecules %s", possible_molecules)
-                        self.board.mark_molecules_in_board(partial_indeces, MARKED)
-                    else:
-                        self.board.mark_molecules_in_board(partial_indeces, EMPTY)
-                        partial_indeces = list()
-                        score = score - 1
-                    print("Try it again")
-                else:
-                    partial_indeces = list()
-                    score = score + 1
-                    print("Found it!")
-                    logging.debug("left molecules %s", self.molecules)
-                logging.debug("score %s", score)
             except (ValueError, IndexError):
                 print("Bad coords inserted!")
                 logging.warn("bad coords input `%s`", s_user_input)
-            except KeyboardInterrupt:
-                break
+
+            try:
+                molecules = self.molecules[user_molecule.hash_key()]
+                molecules.index(user_molecule)
+                self.board.mark_molecules_in_board(partial_indeces, CHECKED)
+            except ValueError:
+                possible_molecules = [molecule
+                                      for molecule in molecules
+                                      if molecule.issubset(user_molecule)]
+                if possible_molecules:
+                    print("You are on the right way")
+                    logging.debug("possible molecules %s", possible_molecules)
+                    self.board.mark_molecules_in_board(partial_indeces, MARKED)
+                else:
+                    self.board.mark_molecules_in_board(partial_indeces, EMPTY)
+                    partial_indeces = list()
+                    score = score - 1
+                print("Try it again")
+            except IndexError:
+                self.board.mark_molecules_in_board(partial_indeces, EMPTY)
+                partial_indeces = list()
+                score = score - 1
+                print("Try it again")
+            else:
+                partial_indeces = list()
+                score = score + 1
+                print("Found it!")
+                logging.debug("left molecules %s", self.molecules)
+            logging.debug("score %s", score)
+
         else:
             print("You are finished!")
             logging.debug("Empty molecules")
