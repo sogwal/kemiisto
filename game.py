@@ -57,6 +57,11 @@ class Game(object):
                 s_user_input = input("Create molecule:")
                 logging.debug("user input `%s`", s_user_input)
                 indeces = self.parse_user_input(s_user_input)
+                try:
+                    if not self.board.is_path(partial_indeces[-1], *indeces):
+                        raise ValueError
+                except IndexError:
+                    pass
                 partial_indeces.extend(indeces)
                 user_molecule = self.board.find_molecule_in_board(partial_indeces)
                 try:

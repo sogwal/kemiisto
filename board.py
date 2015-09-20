@@ -4,6 +4,7 @@ import logging
 import random
 from util import logged
 from molecule import Molecule
+from collections import defaultdict
 
 EMPTY = ""
 MARKED = "o"
@@ -16,6 +17,10 @@ class Board(tuple):
         self.size = size
         return self
 
+    def __repr__(self):
+        return "<Board size=%sx%s>" % (self.size, self.size)
+
+
     @staticmethod
     @logged
     def generate(size, atoms):
@@ -27,7 +32,7 @@ class Board(tuple):
 
     @logged
     def print_board(self):
-        logging.debug("%s", self)
+        logging.debug("%s", str(self))
         print("\t\t"+"\t\t".join(str(ind) for ind in range(self.size)))
         print("\t"+"-"*(self.size*(2*7+2)+1))
         for ind, row in enumerate(self):
@@ -37,12 +42,25 @@ class Board(tuple):
 
     @logged
     def find_molecule_in_board(self, indeces):
-        atoms = list()
+        atoms = defaultdict(int)
         for x, y in indeces:
-            atoms.append(self[x][y][0])
+            atoms[self[x][y][0][0]] += self[x][y][0][1]
         return Molecule(atoms)
 
     @logged
     def mark_molecules_in_board(self, indeces, mark):
         for x, y in indeces:
             self[x][y][1] = mark
+
+    @logged
+    def neighbours(self, one, two):
+        NEIGBOURHOOD = ((0, -1), (0, 1), (-1, 0), (1, 0))
+        for nbh in NEIGBOURHOOD:
+            if one[0] == two[0] + nbh[0] and one[1] == two[1] + nbh[1]:
+                return True
+
+        return False 
+
+    @logged
+    def is_path(self, *indeces):
+        return all(self.neighbours(one, two) for one, two in zip(indeces[:-1], indeces[1:]))

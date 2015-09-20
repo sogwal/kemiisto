@@ -9,10 +9,6 @@ from collections import defaultdict
 class Molecule(dict):
     """
     """
-    def __str__(self):
-        return "<%s %s>" % (self.__class__.__name__,
-                            super(Molecule, self).__str__())
-
     @logged
     def issubset(self, other):
         logging.debug("issubset")
