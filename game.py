@@ -4,9 +4,9 @@ Chemistry game prototyping.
 """
 
 import logging
-from util import logged
-from collections import defaultdict
-from molecule import Molecule
+from debug import logged
+from util import get_atoms, load_molecules
+
 from board import Board, EMPTY, MARKED, CHECKED
 
 BOARD_SIZE = 5
@@ -15,36 +15,9 @@ BOARD_SIZE = 5
 class Game(object):
     @logged
     def __init__(self, molecules_file, board_size):
-        self.molecules = self.load_molecules(molecules_file)
-        atoms = self.get_atoms(self.molecules)
+        self.molecules = load_molecules(molecules_file)
+        atoms = get_atoms(self.molecules)
         self.board = Board.generate(board_size, atoms)
-
-    @staticmethod
-    @logged
-    def get_atoms(molecules):
-        """
-        """
-        atoms = set([])
-        for molecule_list in molecules.values():
-            for molecule in molecule_list:
-                atoms = atoms.union(molecule.items())
-        return atoms
-
-    @staticmethod
-    @logged
-    def load_molecules(input_file):
-        """
-        Load molecules.
-        """
-        logging.debug("atoms loading from %s", input_file)
-        fi = open(input_file, 'r')
-        molecules = defaultdict(list)
-        for line in fi.readlines():
-            s_molecule = line.strip()
-            atoms = Molecule.parse_from_string_to_atoms(s_molecule)
-            molecule = Molecule(atoms)
-            molecules[molecule.hash_key()].append(molecule)
-        return molecules
 
     @logged
     def main(self):
@@ -70,7 +43,8 @@ class Game(object):
                 except IndexError:
                     pass
                 partial_indeces.extend(indeces)
-                user_molecule = self.board.find_molecule_in_board(partial_indeces)
+                user_molecule = self.board.\
+                    find_molecule_in_board(partial_indeces)
             except (ValueError, IndexError):
                 print("Bad coords inserted!")
                 logging.warn("bad coords input `%s`", s_user_input)
@@ -119,7 +93,8 @@ class Game(object):
 
 if __name__ == "__main__":
     import sys
-    format = "%(asctime)-15s %(name)s %(levelname)-8s %(message)s [%(filename)s.%(funcName)s:%(lineno)s]"
+    format = "%(asctime)-15s %(name)s %(levelname)-8s %(message)s \
+              [%(filename)s.%(funcName)s:%(lineno)s]"
     logging.basicConfig(level=logging.DEBUG, format=format)
     # Preparing game
     game = Game(sys.argv[1], BOARD_SIZE)

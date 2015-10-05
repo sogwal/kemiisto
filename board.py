@@ -2,7 +2,7 @@
 
 import logging
 import random
-from util import logged
+from debug import logged
 from molecule import Molecule
 from collections import defaultdict
 

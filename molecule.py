@@ -2,7 +2,7 @@
 
 import logging
 
-from util import logged
+from debug import logged
 from collections import defaultdict
 
 
