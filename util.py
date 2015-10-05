@@ -1,17 +1,33 @@
 #!/usr/bin/env python
 
 import logging
-import functools
+from debug import logged
+from collections import defaultdict
+from molecule import Molecule
 
 
-def logged(func):
-    @functools.wraps(func)
-    def with_logging(*args, **kwargs):
-        s_args = ", ".join(map(str, args))
-        s_kwargs = ", ".join("%s=%s" % kwarg for kwarg in kwargs.items())
-        logging.debug("Calling %s(%s, %s)", func.__name__, s_args, s_kwargs)
-        retval = func(*args, **kwargs)
-        logging.debug("Returning %s(%s, %s) = %s",
-                      func.__name__, s_args, s_kwargs, retval)
-        return retval
-    return with_logging
+@logged
+def get_atoms(molecules):
+    """
+    """
+    atoms = set([])
+    for molecule_list in molecules.values():
+        for molecule in molecule_list:
+            atoms = atoms.union(molecule.items())
+    return atoms
+
+
+@logged
+def load_molecules(input_file):
+    """
+    Load molecules.
+    """
+    logging.debug("atoms loading from %s", input_file)
+    fi = open(input_file, 'r')
+    molecules = defaultdict(list)
+    for line in fi.readlines():
+        s_molecule = line.strip()
+        atoms = Molecule.parse_from_string_to_atoms(s_molecule)
+        molecule = Molecule(atoms)
+        molecules[molecule.hash_key()].append(molecule)
+    return molecules
