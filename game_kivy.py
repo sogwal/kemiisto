@@ -68,7 +68,7 @@ SIZE = 8
 
 
 Builder.load_string("""
-<Atom>:
+<AtomWidget>:
     spacing: 10
     opacity: 1.0 if self.active else 0.25
     canvas.before:
@@ -96,8 +96,8 @@ Builder.load_string("""
         size: root.width - 2 * root.spacing, root.height - 2 * root.spacing
         text: "{}".format(root.atom)
 
-<GameLayout>:
-    BoardLayout:
+<GameRelativeLayout>:
+    BoardFloatLayout:
         # size: 100, 100
         canvas:
             Color:
@@ -106,12 +106,12 @@ Builder.load_string("""
                 pos: self.pos
                 size: self.size
 
-        GameBoard:
+        GameBoardWidget:
             id: board
 """)
 
 
-class Atom(Widget):
+class AtomWidget(Widget):
     bg_color = ListProperty(Colors.BLACK(0.0))
     color = ListProperty(Colors.BLACK())
     color_alpha = ListProperty(Colors.BLACK(0.33))
@@ -148,15 +148,15 @@ class Atom(Widget):
                ((self.width - 3 * self.spacing) / 2) ** 2
 
 
-class GameLayout(RelativeLayout):
+class GameRelativeLayout(RelativeLayout):
     pass
 
 
-class GameBoard(Widget):
+class GameBoardWidget(Widget):
     selection = ListProperty([])
 
     def __init__(self, **kwargs):
-        super(GameBoard, self).__init__(**kwargs)
+        super(GameBoardWidget, self).__init__(**kwargs)
         self.items = []
         self.generate()
         self.bind(pos=self.on_pos_size, size=self.on_pos_size)
@@ -165,10 +165,10 @@ class GameBoard(Widget):
         for ix in range(SIZE):
             for iy in range(SIZE):
                 color = random.choice(Colors.colors)
-                atom = Atom(pos=self.index_to_pos(ix, iy),
-                            size=(self.item_size, self.item_size),
-                            color=color(), color_alpha=color(0.33),
-                            atom=random.choice(["Na", "Cl", "O", "H", "H2", "O2"]))
+                atom = AtomWidget(pos=self.index_to_pos(ix, iy),
+                                  size=(self.item_size, self.item_size),
+                                  color=color(), color_alpha=color(0.33),
+                                  atom=random.choice(["Na", "Cl", "O", "H", "H2", "O2"]))
                 self.items.append(atom)
                 self.add_widget(atom)
 
@@ -252,7 +252,7 @@ class GameBoard(Widget):
         return True
 
 
-class BoardLayout(FloatLayout):
+class BoardFloatLayout(FloatLayout):
     bg_color = ListProperty(Colors.WHITE())
 
     def do_layout(self, *args):
@@ -271,7 +271,7 @@ class BoardLayout(FloatLayout):
 
 class GameApp(App):
     def build(self):
-        return GameLayout()
+        return GameRelativeLayout()
 
 
 if __name__ == "__main__":
