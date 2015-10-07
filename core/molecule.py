@@ -17,7 +17,7 @@ class Molecule(defaultdict):
         return "%s%s" % (self.__class__.__name__, self.items())
 
     @logged
-    def issubset(self, other):
+    def is_super_molecule(self, other):
         for atom, number in other.items():
             if atom not in self or number > self[atom]:
                 return False

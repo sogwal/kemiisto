@@ -7,7 +7,7 @@ import logging
 from core.debug import logged
 from core.board import Board
 from core.board import BoardItemStatus
-from core.storage import Storage, hash_key
+from core.storage import HashedStorage, MissingError
 
 BOARD_SIZE = 5
 
@@ -35,7 +35,7 @@ def print_board(board):
 class Game(object):
     @logged
     def __init__(self, molecules_file, board_size):
-        self.storage = Storage.load_molecules(molecules_file)
+        self.storage = HashedStorage.load_molecules(molecules_file)
         atoms = self.storage.get_atoms()
         self.board = Board.generate(board_size, atoms)
 
@@ -71,18 +71,12 @@ class Game(object):
                 continue
 
             try:
-                hashkey = hash_key(user_molecule)
-                if hashkey not in self.storage:
-                    raise ValueError
-
-                self.storage[hashkey].index(user_molecule)
+                self.storage.find(user_molecule)
                 self.board.mark_molecules_in_board(partial_indeces,
                                                    BoardItemStatus.CHECKED)
-            except ValueError:
-                molecules = self.storage.get_submolecules(hashkey)
-                possible_molecules = [molecule
-                                      for molecule in molecules
-                                      if molecule.issubset(user_molecule)]
+            except MissingError:
+                possible_molecules = self.storage.\
+                    get_super_molecules(user_molecule)
                 if possible_molecules:
                     print("You are on the right way")
                     logging.debug("possible molecules %s", possible_molecules)
