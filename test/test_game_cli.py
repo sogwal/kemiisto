@@ -3,8 +3,8 @@
 import unittest
 import mock
 
-from game import Game
-from test_dataset import *
+from game_cli import Game
+from test._dataset import *
 
 
 try:
@@ -37,7 +37,7 @@ class TestGameMain(unittest.TestCase):
         with mock.patch.object(builtins, 'input', mock.Mock(
                 side_effect=['0:1', '0:2', '1:0 1:1', KeyboardInterrupt])):
             # temporary with KeyboardInterrupt
-            assert self.game.main() == -1
+            assert self.game.main() == 2
 
     def test_game_main3(self):
         with mock.patch.object(builtins, 'input', mock.Mock(

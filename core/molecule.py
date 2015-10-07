@@ -2,29 +2,35 @@
 
 import logging
 
-from debug import logged
+from core.debug import logged
 from collections import defaultdict
 
 
-class Molecule(dict):
+class Molecule(defaultdict):
     """
+    Molecule.
     """
+    def __init__(self, *args, **kwargs):
+        super(Molecule, self).__init__(int, *args, **kwargs)
+
+    def __repr__(self):
+        return "%s%s" % (self.__class__.__name__, self.items())
+
     @logged
     def issubset(self, other):
-        logging.debug("issubset")
         for atom, number in other.items():
             if atom not in self or number > self[atom]:
                 return False
 
         return True
 
-    @staticmethod
+    @classmethod
     @logged
-    def parse_from_string_to_atoms(molecule):
-        logging.debug("Parsing `%s`", molecule)
-        atoms = defaultdict(int)
-        molecule = iter(molecule)
-        c = next(molecule)
+    def parse_from_string_to_atoms(cls, molecule_string):
+        logging.debug("Parsing `%s`", molecule_string)
+        molecule = cls()
+        molecule_iter = iter(molecule_string)
+        c = next(molecule_iter)
         while True:
             atom = ""
             number = ""
@@ -35,18 +41,18 @@ class Molecule(dict):
                 else:
                     raise ValueError("mismatch formula")
 
-                c = next(molecule)
+                c = next(molecule_iter)
                 if c.islower():
                     atom = atom + c
-                    c = next(molecule)
+                    c = next(molecule_iter)
                     if c.islower():
                         atom = atom + c
-                        c = next(molecule)
+                        c = next(molecule_iter)
 
                 if c.isdigit():
                     number = c
 
-                    c = next(molecule)
+                    c = next(molecule_iter)
                     while True:
                         if c.isdigit():
                             number = number + c
@@ -56,11 +62,8 @@ class Molecule(dict):
                 break
             finally:
                 if number:
-                    atoms[atom] += int(number)
+                    molecule[atom] += int(number)
                 else:
-                    atoms[atom] += 1
+                    molecule[atom] += 1
 
-        return atoms
-
-    def hash_key(self):
-        return "".join(sorted(self.keys()))
+        return molecule

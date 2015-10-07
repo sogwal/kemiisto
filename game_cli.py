@@ -4,19 +4,39 @@ Chemistry game prototyping.
 """
 
 import logging
-from debug import logged
-from util import get_atoms, load_molecules
-
-from board import Board, EMPTY, MARKED, CHECKED
+from core.debug import logged
+from core.board import Board
+from core.board import BoardItemStatus
+from core.storage import Storage, hash_key
 
 BOARD_SIZE = 5
+
+import sys
+if sys.version_info.major == 2:
+    input = raw_input
+
+
+def print_board(board):
+    """Really unreadeable function :-)"""
+    logging.debug("%s", str(board))
+    print("\t\t" + "\t\t".join(str(ind) for ind in range(board.size)))
+    print("\t" + "-" * (board.size * (2 * 7 + 2) + 1))
+    for ind in range(board.size):
+        print("\t%s" % ind + "|\t" + "\t|\t".join("(%s%d)" % (r.atom, r.count)
+              if r.status == BoardItemStatus.CHECKED else "[%s%d]" %
+              (r.atom, r.count)
+              if r.status == BoardItemStatus.MARKED else "%s%d" %
+              (r.atom, r.count)
+              for r in board[ind * board.size:(ind + 1) * board.size]) +
+              "\t|")
+    print("\t" + "-" * (board.size * (2 * 7 + 2) + 1))
 
 
 class Game(object):
     @logged
     def __init__(self, molecules_file, board_size):
-        self.molecules = load_molecules(molecules_file)
-        atoms = get_atoms(self.molecules)
+        self.storage = Storage.load_molecules(molecules_file)
+        atoms = self.storage.get_atoms()
         self.board = Board.generate(board_size, atoms)
 
     @logged
@@ -27,8 +47,8 @@ class Game(object):
         score = 0
         partial_indeces = list()
         # Main game loop
-        while not self.board.all_marked(CHECKED):
-            self.board.print_board()
+        while not self.board.all_marked():
+            print_board(self.board)
             try:
                 s_user_input = input("Create molecule:")
                 logging.debug("user input `%s`", s_user_input)
@@ -48,34 +68,42 @@ class Game(object):
             except (ValueError, IndexError):
                 print("Bad coords inserted!")
                 logging.warn("bad coords input `%s`", s_user_input)
+                continue
 
             try:
-                molecules = self.molecules[user_molecule.hash_key()]
-                molecules.index(user_molecule)
-                self.board.mark_molecules_in_board(partial_indeces, CHECKED)
+                hashkey = hash_key(user_molecule)
+                if hashkey not in self.storage:
+                    raise ValueError
+
+                self.storage[hashkey].index(user_molecule)
+                self.board.mark_molecules_in_board(partial_indeces,
+                                                   BoardItemStatus.CHECKED)
             except ValueError:
+                molecules = self.storage.get_submolecules(hashkey)
                 possible_molecules = [molecule
                                       for molecule in molecules
                                       if molecule.issubset(user_molecule)]
                 if possible_molecules:
                     print("You are on the right way")
                     logging.debug("possible molecules %s", possible_molecules)
-                    self.board.mark_molecules_in_board(partial_indeces, MARKED)
+                    self.board.mark_molecules_in_board(partial_indeces,
+                                                       BoardItemStatus.MARKED)
                 else:
-                    self.board.mark_molecules_in_board(partial_indeces, EMPTY)
+                    self.board.mark_molecules_in_board(partial_indeces,
+                                                       BoardItemStatus.EMPTY)
                     partial_indeces = list()
                     score = score - 1
                 print("Try it again")
             except IndexError:
-                self.board.mark_molecules_in_board(partial_indeces, EMPTY)
+                self.board.mark_molecules_in_board(partial_indeces,
+                                                   BoardItemStatus.EMPTY)
                 partial_indeces = list()
                 score = score - 1
-                print("Try it again")
+                print("Try it again!")
             else:
                 partial_indeces = list()
                 score = score + 1
                 print("Found it!")
-                logging.debug("left molecules %s", self.molecules)
             logging.debug("score %s", score)
 
         else:
