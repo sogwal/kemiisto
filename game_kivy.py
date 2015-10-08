@@ -6,10 +6,12 @@ from kivy.uix.widget import Widget
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.properties import NumericProperty, ListProperty, \
-    BooleanProperty, StringProperty, ObjectProperty
+    ObjectProperty
 from kivy.utils import get_color_from_hex, boundary
 import random
 from kivy.animation import Animation
+
+from core.board import Board, BoardItemStatus
 
 VERY_SLOW = 2.5
 SLOW = 1.0
@@ -68,9 +70,11 @@ SIZE = 8
 
 
 Builder.load_string("""
+#:import BoardItemStatus core.board.BoardItemStatus
 <AtomWidget>:
+    id: atom
     spacing: 10
-    opacity: 1.0 if self.active else 0.25
+    opacity: 0.25 if BoardItemStatus.CHECKED == self.status else 1.0
     canvas.before:
         Color:
             rgba: self.bg_color
@@ -91,13 +95,16 @@ Builder.load_string("""
             pos: self.x + 1.5 * self.spacing, self.y + 1.5 * self.spacing
             size: self.width - 3 * self.spacing, self.height - 3 * self.spacing
     Label:
+        markup: True
         color: self.color
         pos: root.x + root.spacing, root.y + root.spacing
         size: root.width - 2 * root.spacing, root.height - 2 * root.spacing
-        text: "{}".format(root.atom)
+        text: root.to_string()
 
 <GameRelativeLayout>:
+    board: board
     BoardFloatLayout:
+        board: board
         # size: 100, 100
         canvas:
             Color:
@@ -115,32 +122,40 @@ class AtomWidget(Widget):
     bg_color = ListProperty(Colors.BLACK(0.0))
     color = ListProperty(Colors.BLACK())
     color_alpha = ListProperty(Colors.BLACK(0.33))
-    atom = StringProperty("")
-    selected = BooleanProperty(False)
-    active = BooleanProperty(True)
-    spacing = NumericProperty(0)
     anim = ObjectProperty(None, allownone=True)
+    spacing = NumericProperty(0)
+    status = NumericProperty(0)
+    core_atom = ObjectProperty(None, rebind=True)
+
+    def to_string(self):
+        return u"{}[sub]{}[/sub]".format(
+            self.core_atom.atom,
+            self.core_atom.number
+            if self.core_atom.number > 1 else "")
 
     def select(self):
-        if not self.selected:
+        if self.core_atom.status == BoardItemStatus.EMPTY:
             if self.anim:
                 self.anim.cancel(self)
                 self.anim = None
             self.anim = Animation(bg_color=self.color_alpha, d=FAST)
             self.anim.start(self)
-            self.selected = True
+            self.core_atom.marked()
+            self.status = BoardItemStatus.MARKED
 
     def unselect(self):
-        if self.selected:
+        if self.core_atom.status == BoardItemStatus.MARKED:
             if self.anim:
                 self.anim.cancel(self)
                 self.anim = None
             self.anim = Animation(bg_color=Colors.BLACK(0.0), d=VERY_FAST)
             self.anim.start(self)
-            self.selected = False
+            self.core_atom.empty()
+            self.status = BoardItemStatus.EMPTY
 
     def deactivate(self):
-        self.active = False
+        self.core_atom.checked()
+        self.status = BoardItemStatus.CHECKED
 
     def collide_point(self, x, y):
         return (self.center_x - x) ** 2 + \
@@ -149,7 +164,10 @@ class AtomWidget(Widget):
 
 
 class GameRelativeLayout(RelativeLayout):
-    pass
+    board = ObjectProperty(None)
+
+    def init_game(self):
+        self.board.generate()
 
 
 class GameBoardWidget(Widget):
@@ -157,25 +175,32 @@ class GameBoardWidget(Widget):
 
     def __init__(self, **kwargs):
         super(GameBoardWidget, self).__init__(**kwargs)
-        self.items = []
-        self.generate()
+        self.items = [None] * SIZE ** 2
+        self.core_board = [None] * SIZE ** 2
         self.bind(pos=self.on_pos_size, size=self.on_pos_size)
 
     def generate(self):
+        self.core_board = Board.generate(SIZE, [("Na", 1), ("Cl", 1), ("O", 1),
+                                                ("H", 1), ("H", 2), ("O", 2)],
+                                         )
         for ix in range(SIZE):
             for iy in range(SIZE):
+                index = self.item_index(ix, iy)
                 color = random.choice(Colors.colors)
                 atom = AtomWidget(pos=self.index_to_pos(ix, iy),
                                   size=(self.item_size, self.item_size),
                                   color=color(), color_alpha=color(0.33),
-                                  atom=random.choice(["Na", "Cl", "O", "H", "H2", "O2"]))
-                self.items.append(atom)
+                                  status=self.core_board[index].status,
+                                  core_atom=self.core_board[index])
+                self.items[index] = atom
                 self.add_widget(atom)
 
     def on_pos_size(self, *args):
         for ix in range(SIZE):
             for iy in range(SIZE):
                 item = self.items[self.item_index(ix, iy)]
+                if item is None:
+                    continue
                 item.pos = self.index_to_pos(ix, iy)
                 item.size = (self.item_size, self.item_size)
 
@@ -203,7 +228,8 @@ class GameBoardWidget(Widget):
         item_index = self.item_index(ix, iy)
         item = self.items[item_index]
 
-        if not item.collide_point(*touch.pos) or not item.active:
+        if not item.collide_point(*touch.pos) or \
+                item.status == BoardItemStatus.CHECKED:
             touch.ud['item'] = None
             return
 
@@ -254,12 +280,12 @@ class GameBoardWidget(Widget):
 
 class BoardFloatLayout(FloatLayout):
     bg_color = ListProperty(Colors.WHITE())
+    board = ObjectProperty(None)
 
     def do_layout(self, *args):
         size = self.width if self.width < self.height else self.height
-        for child in self.children:
-            child.size = size, size
-            child.center = self.center
+        self.board.size = size, size
+        self.board.center = self.center
 
     def error_animation(self):
         anim = Animation(bg_color=Colors.RED(),
@@ -271,7 +297,11 @@ class BoardFloatLayout(FloatLayout):
 
 class GameApp(App):
     def build(self):
-        return GameRelativeLayout()
+        self.layout = GameRelativeLayout()
+        return self.layout
+
+    def on_start(self):
+        self.layout.init_game()
 
 
 if __name__ == "__main__":

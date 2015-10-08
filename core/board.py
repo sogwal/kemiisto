@@ -5,6 +5,7 @@ from core.debug import logged
 from core.molecule import Molecule
 from collections import namedtuple
 
+
 Index = namedtuple('Index', 'x y')
 
 
@@ -13,19 +14,30 @@ class BoardItemStatus:
 
 
 class BoardItem(object):
-    def __init__(self, atom, count=1, status=BoardItemStatus.EMPTY):
+    def __init__(self, atom, number=1, status=BoardItemStatus.EMPTY):
         self.atom = atom
-        self.count = count
+        self.number = number
         self.status = status
 
     def __eq__(self, other):
+        if not other:
+            return False
         return self.atom == other.atom and \
-            self.count == other.count and \
+            self.number == other.number and \
             self.status == other.status
 
     def __repr__(self):
         return "%s(%s, %s, %s)" % \
-            (self.__class__.__name__, self.atom, self.count, self.status)
+            (self.__class__.__name__, self.atom, self.number, self.status)
+
+    def checked(self):
+        self.status = BoardItemStatus.CHECKED
+
+    def marked(self):
+        self.status = BoardItemStatus.MARKED
+
+    def empty(self):
+        self.status = BoardItemStatus.EMPTY
 
 
 class Board(tuple):
@@ -53,7 +65,7 @@ class Board(tuple):
         atoms = Molecule()
         for x, y in indeces:
             index = self.index(x, y)
-            atoms[self[index].atom] += self[index].count
+            atoms[self[index].atom] += self[index].number
         return Molecule(atoms)
 
     @logged
