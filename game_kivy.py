@@ -12,6 +12,7 @@ import random
 from kivy.animation import Animation
 
 from core.board import Board, BoardItemStatus
+from core.molecule import Atom
 
 VERY_SLOW = 2.5
 SLOW = 1.0
@@ -129,9 +130,9 @@ class AtomWidget(Widget):
 
     def to_string(self):
         return u"{}[sub]{}[/sub]".format(
-            self.core_atom.atom,
-            self.core_atom.number
-            if self.core_atom.number > 1 else "")
+            self.core_atom.atom.atom,
+            self.core_atom.atom.number
+            if self.core_atom.atom.number > 1 else "")
 
     def select(self):
         if self.core_atom.status == BoardItemStatus.EMPTY:
@@ -180,8 +181,9 @@ class GameBoardWidget(Widget):
         self.bind(pos=self.on_pos_size, size=self.on_pos_size)
 
     def generate(self):
-        self.core_board = Board.generate(SIZE, [("Na", 1), ("Cl", 1), ("O", 1),
-                                                ("H", 1), ("H", 2), ("O", 2)],
+        self.core_board = Board.generate(SIZE, [Atom("Na", 1), Atom("Cl", 1),
+                                                Atom("O", 1), Atom("H", 1),
+                                                Atom("H", 2), Atom("O", 2)],
                                          )
         for ix in range(SIZE):
             for iy in range(SIZE):
@@ -235,6 +237,9 @@ class GameBoardWidget(Widget):
 
         if touch.ud.get('item', None) == item:
             return
+
+        # if self.selection and not self.selection[-1].core_atom.is_path(item):
+        #    return
 
         if self.selection and self.selection[-1] == item:
             item.unselect()

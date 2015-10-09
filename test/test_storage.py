@@ -1,18 +1,25 @@
 #!/usr/bin/env python
 import unittest
-from core.storage import HashedStorage
+from core.storage import Storage
 from core.molecule import Molecule
 from test._dataset import *
 
 
-class TestHashedStorage(unittest.TestCase):
-    def test_hashedstorage_get_atoms(self):
-        storage = HashedStorage(dict(ClNa=[Molecule(NaCl)],
-                                HO=[Molecule(H2O), Molecule(H2O2)]))
+class TestStorage(unittest.TestCase):
+    def test_storage_get_atoms(self):
+        storage = Storage([Molecule("NaCl"), Molecule("H2O"),
+                           Molecule("H2O2")])
         assert storage.get_atoms() == \
             set([("H", 2), ("Na", 1), ("O", 1), ("Cl", 1), ("O", 2)])
 
-    def test_hashedstorage_load_molecules(self):
-        assert HashedStorage.load_molecules("test/test.txt") == \
-            dict([(frozenset(['Cl', 'Na']), [Molecule(NaCl)]),
-                  (frozenset(['H', 'O']), [Molecule(H2O)])])
+    def test_storage_load_molecules(self):
+        assert Storage.load_molecules("test/test.txt") == \
+            [Molecule("NaCl"), Molecule("H2O")]
+
+    def test_storage_get_super_molecules(self):
+        from nose import SkipTest
+        raise SkipTest
+
+    def test_storage_find(self):
+        from nose import SkipTest
+        raise SkipTest

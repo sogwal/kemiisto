@@ -5,8 +5,7 @@ from core.debug import logged
 from core.molecule import Molecule
 from collections import namedtuple
 
-
-Index = namedtuple('Index', 'x y')
+I = namedtuple('Index', 'x y')
 
 
 class BoardItemStatus:
@@ -14,21 +13,24 @@ class BoardItemStatus:
 
 
 class BoardItem(object):
-    def __init__(self, atom, number=1, status=BoardItemStatus.EMPTY):
+    def __init__(self, atom, status=BoardItemStatus.EMPTY):
         self.atom = atom
-        self.number = number
         self.status = status
+
+    def to_string(self):
+        return "%s%d" % (self.atom.atom, self.atom.number) \
+            if self.atom.number > 1 else "%s" % self.atom.atom
 
     def __eq__(self, other):
         if not other:
             return False
-        return self.atom == other.atom and \
-            self.number == other.number and \
+        return self.atom.atom == other.atom.atom and \
+            self.atom.number == other.atom.number and \
             self.status == other.status
 
     def __repr__(self):
-        return "%s(%s, %s, %s)" % \
-            (self.__class__.__name__, self.atom, self.number, self.status)
+        return "%s(%s, %s)" % \
+            (self.__class__.__name__, self.atom, self.status)
 
     def checked(self):
         self.status = BoardItemStatus.CHECKED
@@ -50,35 +52,33 @@ class Board(tuple):
         return "<Board size=%sx%s>" % (self.size, self.size)
 
     @logged
-    def index(self, x, y):
-        return x * self.size + y
+    def index(self, index):
+        return index.x * self.size + index.y
 
     @classmethod
     @logged
     def generate(cls, size, atoms):
         atoms = list(atoms)
-        return cls(tuple(BoardItem(*random.choice(atoms))
+        return cls(tuple(BoardItem(random.choice(atoms))
                    for _ in range(size * size)), size)
 
     @logged
     def find_molecule_in_board(self, indeces):
-        atoms = Molecule()
-        for x, y in indeces:
-            index = self.index(x, y)
-            atoms[self[index].atom] += self[index].number
-        return Molecule(atoms)
+        return Molecule("".join(self[self.index(i)].to_string()
+                                for i in indeces))
 
     @logged
     def mark_molecules_in_board(self, indeces, mark=BoardItemStatus.CHECKED):
-        for x, y in indeces:
-            index = self.index(x, y)
+        for i in indeces:
+            index = self.index(i)
             self[index].status = mark
 
     @logged
     def neighbours(self, one, two):
-        _neighbourhood = ((0, -1), (0, 1), (-1, 0), (1, 0))
+        _neighbourhood = (I(0, -1), I(0, 1), I(-1, 0), I(1, 0))
         for nbh in _neighbourhood:
-            if one[0] == two[0] + nbh[0] and one[1] == two[1] + nbh[1]:
+            if one.x == two.x + nbh.x and \
+                    one.y == two.y + nbh.y:
                 return True
 
         return False

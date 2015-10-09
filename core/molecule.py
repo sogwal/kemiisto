@@ -3,39 +3,37 @@
 import logging
 
 from core.debug import logged
-from collections import defaultdict
+from collections import namedtuple
+
+Atom = namedtuple('Atom', ['atom', 'number'])
 
 
-class Molecule(defaultdict):
+class Molecule(str):
     """
     Molecule.
     """
     def __init__(self, *args, **kwargs):
-        super(Molecule, self).__init__(int, *args, **kwargs)
+        if self:
+            self.atoms = self.parse_from_string_to_atoms(self)
 
-    def __repr__(self):
-        return "%s%s" % (self.__class__.__name__, self.items())
+    def __new__(cls, *args, **kwargs):
+        return super().__new__(cls, *args, **kwargs)
 
     @logged
     def is_super_molecule(self, other):
-        for atom, number in other.items():
-            if atom not in self or number > self[atom]:
-                return False
+        size = len(other)
+        return self.startswith(other) and not self[size:size + 1].isdigit()
 
-        return True
-
-    @classmethod
     @logged
-    def parse_from_string_to_atoms(cls, molecule_string):
-        logging.debug("Parsing `%s`", molecule_string)
-        molecule = cls()
-        molecule_iter = iter(molecule_string)
+    def parse_from_string_to_atoms(self, molecule):
+        logging.debug("Parsing `%s`", molecule)
+        atoms = []
+        molecule_iter = iter(molecule)
         c = next(molecule_iter)
         while True:
             atom = ""
             number = ""
             try:
-
                 if c.isupper():
                     atom = c
                 else:
@@ -51,19 +49,13 @@ class Molecule(defaultdict):
 
                 if c.isdigit():
                     number = c
-
                     c = next(molecule_iter)
-                    while True:
-                        if c.isdigit():
-                            number = number + c
-                        else:
-                            break
             except StopIteration:
                 break
             finally:
                 if number:
-                    molecule[atom] += int(number)
+                    atoms.append(Atom(atom, int(number)))
                 else:
-                    molecule[atom] += 1
+                    atoms.append(Atom(atom, 1))
 
-        return molecule
+        return atoms

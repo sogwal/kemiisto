@@ -6,8 +6,8 @@ Chemistry game prototyping.
 import logging
 from core.debug import logged
 from core.board import Board
-from core.board import BoardItemStatus
-from core.storage import HashedStorage, MissingError
+from core.board import BoardItemStatus, I
+from core.storage import Storage, MissingError
 
 BOARD_SIZE = 5
 
@@ -22,11 +22,10 @@ def print_board(board):
     print("\t\t" + "\t\t".join(str(ind) for ind in range(board.size)))
     print("\t" + "-" * (board.size * (2 * 7 + 2) + 1))
     for ind in range(board.size):
-        print("\t%s" % ind + "|\t" + "\t|\t".join("(%s%d)" % (r.atom, r.count)
-              if r.status == BoardItemStatus.CHECKED else "[%s%d]" %
-              (r.atom, r.count)
-              if r.status == BoardItemStatus.MARKED else "%s%d" %
-              (r.atom, r.count)
+        print("\t%s" % ind + "|\t" + "\t|\t".join("(%s)" % r.to_string()
+              if r.status == BoardItemStatus.CHECKED else "[%s]" %
+              r.to_string()
+              if r.status == BoardItemStatus.MARKED else r.to_string()
               for r in board[ind * board.size:(ind + 1) * board.size]) +
               "\t|")
     print("\t" + "-" * (board.size * (2 * 7 + 2) + 1))
@@ -35,7 +34,7 @@ def print_board(board):
 class Game(object):
     @logged
     def __init__(self, molecules_file, board_size):
-        self.storage = HashedStorage.load_molecules(molecules_file)
+        self.storage = Storage.load_molecules(molecules_file)
         atoms = self.storage.get_atoms()
         self.board = Board.generate(board_size, atoms)
 
@@ -108,7 +107,7 @@ class Game(object):
     @staticmethod
     @logged
     def parse_user_input(user_input):
-        return tuple(map(lambda x: (int(x[0]), int(x[1])),
+        return tuple(map(lambda x: I(int(x[0]), int(x[1])),
                          map(lambda x: x.split(":"),
                              user_input.strip().split(" "))))
 

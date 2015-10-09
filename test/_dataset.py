@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 
+from core.molecule import Atom
 
-H2 = ("H", 2)
-Na = ("Na", 1)
-Na2 = ("Na", 2)
-Cl = ("Cl", 1)
-O2 = ("O", 2)
-O = ("O", 1)
+H2 = Atom("H", 2)
+Na = Atom("Na", 1)
+Na2 = Atom("Na", 2)
+Cl = Atom("Cl", 1)
+O2 = Atom("O", 2)
+O = Atom("O", 1)
 
-from collections import defaultdict
-
-NaCl = defaultdict(int, [("Na", 1), ("Cl", 1)])
-H2O = defaultdict(int, [("H", 2), ("O", 1)])
-H2O2 = defaultdict(int, [("H", 2), ("O", 2)])
-H2SO4 = defaultdict(int, [("H", 2), ("S", 1), ("O", 4)])
+NaCl = [Atom("Na", 1), Atom("Cl", 1)]
+H2O = [Atom("H", 2), Atom("O", 1)]
+H2O2 = [Atom("H", 2), Atom("O", 2)]
+H2SO4 = [Atom("H", 2), Atom("S", 1), Atom("O", 4)]
