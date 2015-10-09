@@ -12,7 +12,7 @@ import random
 from kivy.animation import Animation
 
 from core.board import Board, BoardItemStatus
-from core.molecule import Atom
+from core.storage import Storage, MissingError
 
 VERY_SLOW = 2.5
 SLOW = 1.0
@@ -155,8 +155,14 @@ class AtomWidget(Widget):
             self.status = BoardItemStatus.EMPTY
 
     def deactivate(self):
-        self.core_atom.checked()
-        self.status = BoardItemStatus.CHECKED
+        if self.core_atom.status == BoardItemStatus.MARKED:
+            if self.anim:
+                    self.anim.cancel(self)
+                    self.anim = None
+            self.anim = Animation(bg_color=Colors.BLACK(0.0), d=VERY_FAST)
+            self.anim.start(self)
+            self.core_atom.checked()
+            self.status = BoardItemStatus.CHECKED
 
     def collide_point(self, x, y):
         return (self.center_x - x) ** 2 + \
@@ -167,8 +173,8 @@ class AtomWidget(Widget):
 class GameRelativeLayout(RelativeLayout):
     board = ObjectProperty(None)
 
-    def init_game(self):
-        self.board.generate()
+    def init_game(self, storage, atoms):
+        self.board.generate(storage, atoms)
 
 
 class GameBoardWidget(Widget):
@@ -176,15 +182,14 @@ class GameBoardWidget(Widget):
 
     def __init__(self, **kwargs):
         super(GameBoardWidget, self).__init__(**kwargs)
+        self.storage = []
         self.items = [None] * SIZE ** 2
         self.core_board = [None] * SIZE ** 2
         self.bind(pos=self.on_pos_size, size=self.on_pos_size)
 
-    def generate(self):
-        self.core_board = Board.generate(SIZE, [Atom("Na", 1), Atom("Cl", 1),
-                                                Atom("O", 1), Atom("H", 1),
-                                                Atom("H", 2), Atom("O", 2)],
-                                         )
+    def generate(self, storage, atoms):
+        self.storage = storage
+        self.core_board = Board.generate(SIZE, atoms)
         for ix in range(SIZE):
             for iy in range(SIZE):
                 index = self.item_index(ix, iy)
@@ -238,13 +243,14 @@ class GameBoardWidget(Widget):
         if touch.ud.get('item', None) == item:
             return
 
-        # if self.selection and not self.selection[-1].core_atom.is_path(item):
-        #    return
-
-        if self.selection and self.selection[-1] == item:
-            item.unselect()
-            self.selection = self.selection[:-1]
-        elif item not in self.selection:
+        if len(self.selection) > 1 and self.selection[-1] == item:
+                item.unselect()
+                self.selection.pop()
+        elif item not in self.selection and \
+                (not self.selection or
+                    self.core_board.neighbours(
+                        self.selection[-1].core_atom.index,
+                        item.core_atom.index)):
             item.select()
             self.selection.append(item)
         touch.ud['item'] = item
@@ -252,11 +258,22 @@ class GameBoardWidget(Widget):
     def unselect_all(self):
         for item in self.selection:
             item.unselect()
+        self.selection = []
+
+    def deactivate_all(self):
+        for item in self.selection:
             item.deactivate()
         self.selection = []
 
     def check(self):
-        return False
+        indeces = [item.core_atom.index for item in self.selection]
+        molecule = self.core_board.find_molecule_in_board(indeces)
+        try:
+            self.storage.find(molecule)
+        except MissingError:
+            return False
+        else:
+            return True
 
     def on_touch_down(self, touch):
         if not self.collide_point(*touch.pos):
@@ -278,7 +295,10 @@ class GameBoardWidget(Widget):
         if self.selection:
             if not self.check():
                 self.parent.error_animation()
-        self.unselect_all()
+                self.unselect_all()
+            else:
+                self.deactivate_all()
+
         touch.ungrab(self)
         return True
 
@@ -306,7 +326,10 @@ class GameApp(App):
         return self.layout
 
     def on_start(self):
-        self.layout.init_game()
+        import sys
+        storage = Storage.load_molecules(sys.argv[1])
+        atoms = storage.get_atoms()
+        self.layout.init_game(storage, atoms)
 
 
 if __name__ == "__main__":

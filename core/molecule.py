@@ -16,9 +16,6 @@ class Molecule(str):
         if self:
             self.atoms = self.parse_from_string_to_atoms(self)
 
-    def __new__(cls, *args, **kwargs):
-        return super().__new__(cls, *args, **kwargs)
-
     @logged
     def is_super_molecule(self, other):
         size = len(other)

@@ -13,9 +13,10 @@ class BoardItemStatus:
 
 
 class BoardItem(object):
-    def __init__(self, atom, status=BoardItemStatus.EMPTY):
+    def __init__(self, atom, index, status=BoardItemStatus.EMPTY):
         self.atom = atom
         self.status = status
+        self.index = index
 
     def to_string(self):
         return "%s%d" % (self.atom.atom, self.atom.number) \
@@ -59,8 +60,8 @@ class Board(tuple):
     @logged
     def generate(cls, size, atoms):
         atoms = list(atoms)
-        return cls(tuple(BoardItem(random.choice(atoms))
-                   for _ in range(size * size)), size)
+        return cls(tuple(BoardItem(random.choice(atoms), I(x, y))
+                   for x in range(size) for y in range(size)), size)
 
     @logged
     def find_molecule_in_board(self, indeces):
