@@ -19,16 +19,16 @@ if sys.version_info.major == 2:
 def print_board(board):
     """Really unreadeable function :-)"""
     logging.debug("%s", str(board))
-    print("\t\t" + "\t\t".join(str(ind) for ind in range(board.size)))
-    print("\t" + "-" * (board.size * (2 * 7 + 2) + 1))
-    for ind in range(board.size):
-        print("\t%s" % ind + "|\t" + "\t|\t".join("(%s)" % r.to_string()
+    print("\t\t" + "\t\t".join(str(ind) for ind in range(board.length)))
+    print("\t" + "-" * (board.length * (2 * 7 + 2) + 1))
+    for ind in range(board.length):
+        print("\t%s" % ind + "|\t" + "\t|\t".join("(%s)" % r._to_molecule_string()
               if r.status == BoardItemStatus.CHECKED else "[%s]" %
-              r.to_string()
-              if r.status == BoardItemStatus.MARKED else r.to_string()
-              for r in board[ind * board.size:(ind + 1) * board.size]) +
+              r._to_molecule_string()
+              if r.status == BoardItemStatus.MARKED else r._to_molecule_string()
+              for r in board.iterable[ind * board.length:(ind + 1) * board.length]) +
               "\t|")
-    print("\t" + "-" * (board.size * (2 * 7 + 2) + 1))
+    print("\t" + "-" * (board.length * (2 * 7 + 2) + 1))
 
 
 class Game(object):
@@ -36,7 +36,8 @@ class Game(object):
     def __init__(self, molecules_file, board_size):
         self.storage = Storage.load_molecules(molecules_file)
         atoms = self.storage.get_atoms()
-        self.board = Board.generate(board_size, atoms)
+        self.board = Board([], 0)
+        self.board.generate(board_size, atoms)
 
     @logged
     def main(self):

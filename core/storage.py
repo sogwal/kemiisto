@@ -24,13 +24,17 @@ class Storage(list):
         return molecules
 
     @logged
-    def get_atoms(self):
+    def get_atoms(self, unique=False):
         """
         """
-        atoms = set([])
+        atoms = []
         for molecule in self:
-            atoms = atoms.union(set(molecule.atoms))
-        return atoms
+            atoms.extend(molecule.atoms)
+        return set(atoms) if unique else atoms
+        # atoms = set([])
+        # for molecule in self:
+        #     atoms = atoms.union(set(molecule.atoms))
+        # return list(atoms)
 
     @logged
     def get_super_molecules(self, other):

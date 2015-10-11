@@ -10,7 +10,7 @@ class TestStorage(unittest.TestCase):
         storage = Storage([Molecule("NaCl"), Molecule("H2O"),
                            Molecule("H2O2")])
         assert storage.get_atoms() == \
-            set([("H", 2), ("Na", 1), ("O", 1), ("Cl", 1), ("O", 2)])
+            [Na, Cl, H2, O, H2, O2]
 
     def test_storage_load_molecules(self):
         assert Storage.load_molecules("test/test.txt") == \

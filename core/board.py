@@ -13,12 +13,12 @@ class BoardItemStatus:
 
 
 class BoardItem(object):
-    def __init__(self, atom, index, status=BoardItemStatus.EMPTY):
+    def __init__(self, atom, index, status=BoardItemStatus.EMPTY, **kwargs):
         self.atom = atom
         self.status = status
         self.index = index
 
-    def to_string(self):
+    def _to_molecule_string(self):
         return "%s%d" % (self.atom.atom, self.atom.number) \
             if self.atom.number > 1 else "%s" % self.atom.atom
 
@@ -30,8 +30,8 @@ class BoardItem(object):
             self.status == other.status
 
     def __repr__(self):
-        return "%s(%s, %s)" % \
-            (self.__class__.__name__, self.atom, self.status)
+        return "%s(%s, %s, %s)" % \
+            (self.__class__.__name__, self.atom, self.index, self.status)
 
     def checked(self):
         self.status = BoardItemStatus.CHECKED
@@ -43,36 +43,39 @@ class BoardItem(object):
         self.status = BoardItemStatus.EMPTY
 
 
-class Board(tuple):
-    def __new__(cls, iterable, size):
-        self = tuple.__new__(cls, iterable)
-        self.size = size
-        return self
+class Board(object):
+    def __init__(self, iterable, length):
+        self.iterable = iterable
+        self.length = length
 
     def __repr__(self):
-        return "<Board size=%sx%s>" % (self.size, self.size)
+        return "<Board length=%sx%s>" % (self.length, self.length)
 
     @logged
     def index(self, index):
-        return index.x * self.size + index.y
+        return index.x * self.length + index.y
 
-    @classmethod
     @logged
-    def generate(cls, size, atoms):
-        atoms = list(atoms)
-        return cls(tuple(BoardItem(random.choice(atoms), I(x, y))
-                   for x in range(size) for y in range(size)), size)
+    def generate(self, length, atoms):
+        self.length = length
+        self.iterable = list(self.generate_one(atoms, I(x, y))
+                             for x in range(length) for y in range(length))
+
+    @logged
+    def generate_one(self, atoms, index):
+        return BoardItem(random.choice(atoms), index)
 
     @logged
     def find_molecule_in_board(self, indeces):
-        return Molecule("".join(self[self.index(i)].to_string()
+        return Molecule("".join(self.iterable[self.index(i)].
+                                _to_molecule_string()
                                 for i in indeces))
 
     @logged
     def mark_molecules_in_board(self, indeces, mark=BoardItemStatus.CHECKED):
         for i in indeces:
             index = self.index(i)
-            self[index].status = mark
+            self.iterable[index].status = mark
 
     @logged
     def neighbours(self, one, two):
@@ -91,4 +94,16 @@ class Board(tuple):
 
     @logged
     def all_marked(self, mark=BoardItemStatus.CHECKED):
-        return all(cell.status == mark for cell in self)
+        return all(cell.status == mark for cell in self.iterable)
+
+   # @logged
+   # def compact(self):
+   #     for index in range(self.length, self):
+   #         if self.iterable[index] is None:
+   #             continue
+   #         new_index = index - self.length
+   #         for new_index in range(index - self.length, 0, -self.length):
+   #             if self.iterable[new_index]:
+   #                 break
+   #         self.iterable[index], self.iterable[new_index] = \
+   #             self.iterable[new_index], self.iterable[index]

@@ -11,7 +11,7 @@ from kivy.utils import get_color_from_hex, boundary
 import random
 from kivy.animation import Animation
 
-from core.board import Board, BoardItemStatus
+from core.board import Board, BoardItemStatus, I, BoardItem
 from core.storage import Storage, MissingError
 
 VERY_SLOW = 2.5
@@ -119,49 +119,54 @@ Builder.load_string("""
 """)
 
 
-class AtomWidget(Widget):
+class AtomWidget(BoardItem, Widget):
     bg_color = ListProperty(Colors.BLACK(0.0))
     color = ListProperty(Colors.BLACK())
     color_alpha = ListProperty(Colors.BLACK(0.33))
     anim = ObjectProperty(None, allownone=True)
     spacing = NumericProperty(0)
     status = NumericProperty(0)
-    core_atom = ObjectProperty(None, rebind=True)
+    atom = ObjectProperty(None, rebind=True)
+    index = ObjectProperty(None)
+
+    def __init__(self, **kwargs):
+        Widget.__init__(self, **kwargs)
+        # BoardItem.__init__(self, *args, **kwargs)#, atom, index, status)
 
     def to_string(self):
         return u"{}[sub]{}[/sub]".format(
-            self.core_atom.atom.atom,
-            self.core_atom.atom.number
-            if self.core_atom.atom.number > 1 else "")
+            self.atom.atom,
+            self.atom.number
+            if self.atom.number > 1 else "")
 
     def select(self):
-        if self.core_atom.status == BoardItemStatus.EMPTY:
+        if self.status == BoardItemStatus.EMPTY:
             if self.anim:
                 self.anim.cancel(self)
                 self.anim = None
             self.anim = Animation(bg_color=self.color_alpha, d=FAST)
             self.anim.start(self)
-            self.core_atom.marked()
+            self.marked()
             self.status = BoardItemStatus.MARKED
 
     def unselect(self):
-        if self.core_atom.status == BoardItemStatus.MARKED:
+        if self.status == BoardItemStatus.MARKED:
             if self.anim:
                 self.anim.cancel(self)
                 self.anim = None
             self.anim = Animation(bg_color=Colors.BLACK(0.0), d=VERY_FAST)
             self.anim.start(self)
-            self.core_atom.empty()
+            self.empty()
             self.status = BoardItemStatus.EMPTY
 
     def deactivate(self):
-        if self.core_atom.status == BoardItemStatus.MARKED:
+        if self.status == BoardItemStatus.MARKED:
             if self.anim:
                     self.anim.cancel(self)
                     self.anim = None
             self.anim = Animation(bg_color=Colors.BLACK(0.0), d=VERY_FAST)
             self.anim.start(self)
-            self.core_atom.checked()
+            self.checked()
             self.status = BoardItemStatus.CHECKED
 
     def collide_point(self, x, y):
@@ -174,66 +179,65 @@ class GameRelativeLayout(RelativeLayout):
     board = ObjectProperty(None)
 
     def init_game(self, storage, atoms):
-        self.board.generate(storage, atoms)
+        self.board.storage = storage
+        # self.board.atoms = atoms
+        self.board.generate(SIZE, atoms)
 
 
-class GameBoardWidget(Widget):
+class GameBoardWidget(Board, Widget):
     selection = ListProperty([])
 
     def __init__(self, **kwargs):
-        super(GameBoardWidget, self).__init__(**kwargs)
+        Board.__init__(self, [], 0)
+        Widget.__init__(self, **kwargs)
         self.storage = []
-        self.items = [None] * SIZE ** 2
-        self.core_board = [None] * SIZE ** 2
+        # self.atoms = []
         self.bind(pos=self.on_pos_size, size=self.on_pos_size)
 
-    def generate(self, storage, atoms):
-        self.storage = storage
-        self.core_board = Board.generate(SIZE, atoms)
-        for ix in range(SIZE):
-            for iy in range(SIZE):
-                index = self.item_index(ix, iy)
-                color = random.choice(Colors.colors)
-                atom = AtomWidget(pos=self.index_to_pos(ix, iy),
-                                  size=(self.item_size, self.item_size),
-                                  color=color(), color_alpha=color(0.33),
-                                  status=self.core_board[index].status,
-                                  core_atom=self.core_board[index])
-                self.items[index] = atom
-                self.add_widget(atom)
+    def generate_one(self, atoms, index):
+        atom = random.choice(atoms)
+        color = Colors.colors[atoms.index(atom)]
+        atom_widget = AtomWidget(atom=atom,
+                                 index=index,
+                                 pos=self.index_to_pos(index),
+                                 size=(self.item_size, self.item_size),
+                                 color=color(), color_alpha=color(0.33),
+                                 status=BoardItemStatus.EMPTY)
+        self.add_widget(atom_widget)
+        return atom_widget
 
     def on_pos_size(self, *args):
-        for ix in range(SIZE):
-            for iy in range(SIZE):
-                item = self.items[self.item_index(ix, iy)]
+        for ix in range(self.length):
+            for iy in range(self.length):
+                index = I(ix, iy)
+                item = self.iterable[self.index(index)]
                 if item is None:
                     continue
-                item.pos = self.index_to_pos(ix, iy)
+                item.pos = self.index_to_pos(index)
                 item.size = (self.item_size, self.item_size)
-
-    def item_index(self, ix, iy):
-        return ix * SIZE + iy
 
     @property
     def item_size(self):
-        return int(self.width / SIZE)
+        return int(self.width / self.length)
 
-    def index_to_pos(self, ix, iy):
-        return self.x + ix * self.item_size, self.y + iy * self.item_size
+    def index_to_pos(self, index):
+        return self.x + index.x * self.item_size, \
+            self.y + index.y * self.item_size
 
-    def find_indeces(self, x, y):
+    def find_indeces(self, index):
         # relative to widget
-        x -= self.x
-        y -= self.y
+        x = index.x - self.x
+        y = index.y - self.y
         size = self.item_size
-
-        return (boundary(0, SIZE, int(x / size)),
-                boundary(0, SIZE, int(y / size)))
+        return I(boundary(0, self.length, int(x / size)),
+                 boundary(0, self.length, int(y / size)))
 
     def select_item(self, touch):
-        ix, iy = self.find_indeces(*touch.pos)
-        item_index = self.item_index(ix, iy)
-        item = self.items[item_index]
+        index = self.find_indeces(I(*touch.pos))
+        item = self.iterable[self.index(index)]
+
+        if not item:
+            return
 
         if not item.collide_point(*touch.pos) or \
                 item.status == BoardItemStatus.CHECKED:
@@ -246,11 +250,12 @@ class GameBoardWidget(Widget):
         if len(self.selection) > 1 and self.selection[-1] == item:
                 item.unselect()
                 self.selection.pop()
+
         elif item not in self.selection and \
                 (not self.selection or
-                    self.core_board.neighbours(
-                        self.selection[-1].core_atom.index,
-                        item.core_atom.index)):
+                    self.neighbours(
+                        self.selection[-1].index,
+                        item.index)):
             item.select()
             self.selection.append(item)
         touch.ud['item'] = item
@@ -263,11 +268,15 @@ class GameBoardWidget(Widget):
     def deactivate_all(self):
         for item in self.selection:
             item.deactivate()
+            index = self.index(item.index)
+            self.iterable[index] = None
+            self.remove_widget(item)
+            # self.generate_item(self.atoms, *item.core_atom.index)
         self.selection = []
 
     def check(self):
-        indeces = [item.core_atom.index for item in self.selection]
-        molecule = self.core_board.find_molecule_in_board(indeces)
+        indeces = [item.index for item in self.selection]
+        molecule = self.find_molecule_in_board(indeces)
         try:
             self.storage.find(molecule)
         except MissingError:
