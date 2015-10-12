@@ -136,9 +136,13 @@ class AtomWidget(BoardItem, Widget):
         # BoardItem.__init__(self, *args, **kwargs)#, atom, index, status)
 
     def move_to(self, *args):
-        Animation(pos=self.parent.index_to_pos(self.index),
-                  transition="out_bounce",
-                  d=VERY_FAST).start(self)
+        if self.anim:
+            self.anim.cancel(self)
+            self.anim = None
+        self.anim = Animation(pos=self.parent.index_to_pos(self.index),
+                              transition="out_bounce",
+                              d=VERY_FAST)
+        self.anim.start(self)
 
     def to_string(self):
         return u"{}[sub]{}[/sub]".format(
@@ -193,6 +197,7 @@ class GameRelativeLayout(RelativeLayout):
 
 class GameBoardWidget(Board, Widget):
     selection = ListProperty([])
+    counter = NumericProperty(0)
 
     def __init__(self, **kwargs):
         Board.__init__(self, [], 0)
@@ -315,6 +320,9 @@ class GameBoardWidget(Board, Widget):
             else:
                 self.deactivate_all()
                 self.compact()
+                self.counter += 1
+                if self.counter > 10:
+                    self.shuffle(5)
 
         touch.ungrab(self)
         return True

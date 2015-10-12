@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import random
+import logging
 from core.debug import logged
 from core.molecule import Molecule
 from collections import namedtuple
@@ -114,11 +115,22 @@ class Board(object):
                     item.index = I(nix, niy)
                 none[niy] = item
                 niy += 1
-            #new_board.extend(none)
             index = self.index(I(nix, 0))
             new_board[index:index + self.length] = none
             if any(none):
                 nix += 1
         self.iterable = new_board
 
-        print(new_board)
+    @logged
+    def shuffle(self, times):
+        indeces = [index for index, item in enumerate(self.iterable) if item]
+        logging.debug("taken positions: %s", indeces)
+        for _ in range(times):
+            first = random.choice(indeces)
+            second = random.choice(indeces)
+            logging.debug("swapping %d <=> %d", first, second)
+            # swap
+            self.iterable[first], self.iterable[second] = \
+                self.iterable[second], self.iterable[first]
+            self.iterable[first].index, self.iterable[second].index = \
+                self.iterable[second].index, self.iterable[first].index
