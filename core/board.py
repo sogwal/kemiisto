@@ -54,10 +54,14 @@ class Board(object):
 
     @logged
     def index(self, index):
-        return index.x * self.length + index.y
+        if -1 < index.x < self.length and -1 < index.y < self.length:
+            return index.x * self.length + index.y
+        raise IndexError
 
     @logged
     def generate(self, length, atoms):
+        # FIXME should be more intelligent
+        # to be possible clear all atoms from board
         self.length = length
         self.iterable = list(self.generate_one(atoms, I(x, y))
                              for x in range(length) for y in range(length))
@@ -67,10 +71,14 @@ class Board(object):
         return BoardItem(random.choice(atoms), index)
 
     @logged
-    def find_molecule_in_board(self, indeces):
-        return Molecule("".join(self.iterable[self.index(i)].
-                                _to_molecule_string()
-                                for i in indeces))
+    def find_molecule_in_board(self, indeces, mol_object=False):
+        mol = "".join(self.iterable[self.index(i)].
+                      _to_molecule_string()
+                      for i in indeces)
+        return Molecule(mol) if mol_object else mol
+        # return Molecule("".join(self.iterable[self.index(i)].
+        #                        _to_molecule_string()
+        #                        for i in indeces))
 
     @logged
     def mark_molecules_in_board(self, indeces, mark=BoardItemStatus.CHECKED):
@@ -134,3 +142,38 @@ class Board(object):
                 self.iterable[second], self.iterable[first]
             self.iterable[first].index, self.iterable[second].index = \
                 self.iterable[second].index, self.iterable[first].index
+
+    def have_items_to_make_a_move(self, storage):
+        board_atoms = set(item.atom for item in self.iterable if item)
+        for molecule in self.storage:
+            # WARN if H2O2H2, it could not to work correctly.
+            if board_atoms.issuperset(set(molecule.atoms)):
+                return True
+        return False
+
+    def yield_all_molecules(self, index_mapping):
+        for ix in range(self.length):
+            for iy in range(self.length):
+                index = I(ix, iy)
+                for mapping in index_mapping:
+                    indeces = [I(index.x + im.x, index.y + im.y)
+                               for im in mapping]
+                    try:
+                        yield self.find_molecule_in_board(indeces)
+                    except (IndexError, AttributeError):
+                        continue
+
+    @logged
+    def can_make_a_move(self, storage):
+        #            LEFT -> RIGHT        TOP -> BOTTOM
+        #           RIGHT -> LEFT       BOTTOM -> TOP
+        atoms2 = ((I(0, 0), I(1, 0)), (I(0, 0), I(0, 1)),
+                  (I(0, 0), I(-1, 0)), (I(0, 0), I(0, -1)))
+        # FIXME quite expensive
+        # move_map = dict([(2, self.atoms2)])
+        moves = atoms2  # move_map[len(molecule)]
+        possible_molecules = set(self.yield_all_molecules(moves))
+        for molecule in storage:
+            if molecule in possible_molecules:
+                return True
+        return False

@@ -11,6 +11,8 @@ from kivy.utils import get_color_from_hex, boundary
 import random
 from kivy.animation import Animation
 
+from core.debug import Profiling
+
 from core.board import Board, BoardItemStatus, I, BoardItem
 from core.storage import Storage, MissingError
 
@@ -197,7 +199,6 @@ class GameRelativeLayout(RelativeLayout):
 
 class GameBoardWidget(Board, Widget):
     selection = ListProperty([])
-    counter = NumericProperty(0)
 
     def __init__(self, **kwargs):
         Board.__init__(self, [], 0)
@@ -319,10 +320,18 @@ class GameBoardWidget(Board, Widget):
                 self.unselect_all()
             else:
                 self.deactivate_all()
-                self.compact()
-                self.counter += 1
-                if self.counter > 10:
-                    self.shuffle(5)
+                with Profiling('shuffle decision') as profiler:
+                    self.compact()
+                    profiler.checkpoint("compact")
+                    if self.have_items_to_make_a_move(self.storage):
+                        profiler.checkpoint("have_items_to_make_a_move")
+                        while not self.can_make_a_move(self.storage):
+                            profiler.checkpoint("can_make_a_move")
+                            self.shuffle(self.length)
+                            profiler.checkpoint("shuffle")
+                    else:
+                        profiler.checkpoint("have_items_to_make_a_move")
+                        print("GAME OVER!")
 
         touch.ungrab(self)
         return True

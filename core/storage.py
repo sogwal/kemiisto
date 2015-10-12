@@ -8,6 +8,7 @@ class MissingError(BaseException):
     pass
 
 
+# FIXME maybe set?
 class Storage(list):
     @classmethod
     @logged
