@@ -96,14 +96,29 @@ class Board(object):
     def all_marked(self, mark=BoardItemStatus.CHECKED):
         return all(cell.status == mark for cell in self.iterable)
 
-   # @logged
-   # def compact(self):
-   #     for index in range(self.length, self):
-   #         if self.iterable[index] is None:
-   #             continue
-   #         new_index = index - self.length
-   #         for new_index in range(index - self.length, 0, -self.length):
-   #             if self.iterable[new_index]:
-   #                 break
-   #         self.iterable[index], self.iterable[new_index] = \
-   #             self.iterable[new_index], self.iterable[index]
+    @logged
+    def compact(self):
+        new_board = [None] * self.length ** 2
+        nix = 0
+        for ix in range(self.length):
+            none = [None] * self.length
+            niy = 0
+            index = self.index(I(ix, 0))
+            for iy in range(self.length):
+                i = I(ix, iy)
+                index = self.index(i)
+                item = self.iterable[index]
+                if item is None:
+                    continue
+                if niy != iy or nix != ix:
+                    item.index = I(nix, niy)
+                none[niy] = item
+                niy += 1
+            #new_board.extend(none)
+            index = self.index(I(nix, 0))
+            new_board[index:index + self.length] = none
+            if any(none):
+                nix += 1
+        self.iterable = new_board
+
+        print(new_board)

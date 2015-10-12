@@ -98,6 +98,7 @@ Builder.load_string("""
     Label:
         markup: True
         color: self.color
+        font_size: self.width * 0.4
         pos: root.x + root.spacing, root.y + root.spacing
         size: root.width - 2 * root.spacing, root.height - 2 * root.spacing
         text: root.to_string()
@@ -131,7 +132,13 @@ class AtomWidget(BoardItem, Widget):
 
     def __init__(self, **kwargs):
         Widget.__init__(self, **kwargs)
+        self.bind(index=self.move_to)
         # BoardItem.__init__(self, *args, **kwargs)#, atom, index, status)
+
+    def move_to(self, *args):
+        Animation(pos=self.parent.index_to_pos(self.index),
+                  transition="out_bounce",
+                  d=VERY_FAST).start(self)
 
     def to_string(self):
         return u"{}[sub]{}[/sub]".format(
@@ -307,6 +314,7 @@ class GameBoardWidget(Board, Widget):
                 self.unselect_all()
             else:
                 self.deactivate_all()
+                self.compact()
 
         touch.ungrab(self)
         return True
