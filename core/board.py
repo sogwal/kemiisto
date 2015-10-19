@@ -26,9 +26,9 @@ class BoardItem(object):
     def __eq__(self, other):
         if not other:
             return False
-        return self.atom.atom == other.atom.atom and \
-            self.atom.number == other.atom.number and \
-            self.status == other.status
+        return self.atom == other.atom and \
+            self.status == other.status and \
+            self.index == other.index
 
     def __repr__(self):
         return "%s(%s, %s, %s)" % \
@@ -169,11 +169,30 @@ class Board(object):
         #           RIGHT -> LEFT       BOTTOM -> TOP
         atoms2 = ((I(0, 0), I(1, 0)), (I(0, 0), I(0, 1)),
                   (I(0, 0), I(-1, 0)), (I(0, 0), I(0, -1)))
+
+        atoms3 = ((I(0, 0), I(1, 0), I(2, 0)),
+                  (I(0, 0), I(0, 1), I(0, 2)),
+                  (I(0, 0), I(-1, 0), I(-2, 0)),
+                  (I(0, 0), I(0, -1), I(0, -2)),
+
+                  (I(0, 0), I(1, 0), I(1, 1)),
+                  (I(0, 0), I(0, 1), I(1, 1)),
+                  (I(0, 0), I(-1, 0), I(-1, -1)),
+                  (I(0, 0), I(0, -1), I(-1, -1)),
+
+                  (I(0, 0), I(1, 0), I(1, -1)),
+                  (I(0, 0), I(0, 1), I(-1, 1)),
+                  (I(0, 0), I(-1, 0), I(-1, 1)),
+                  (I(0, 0), I(0, -1), I(-1, 1)),
+                  )
+
         # FIXME quite expensive
-        # move_map = dict([(2, self.atoms2)])
-        moves = atoms2  # move_map[len(molecule)]
-        possible_molecules = set(self.yield_all_molecules(moves))
+        move_map = dict(((2, atoms2), (3, atoms3)))
+        possible_molecules = dict()
         for molecule in storage:
-            if molecule in possible_molecules:
+            len_key = len(molecule.atoms)
+            if molecule in possible_molecules.setdefault(
+                    len_key, set(self.yield_all_molecules(move_map[len_key]))):
+                print(possible_molecules[len_key])
                 return True
         return False

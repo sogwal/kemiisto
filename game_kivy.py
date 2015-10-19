@@ -260,10 +260,9 @@ class GameBoardWidget(Board, Widget):
         if touch.ud.get('item', None) == item:
             return
 
-        if len(self.selection) > 1 and self.selection[-1] == item:
-                item.unselect()
-                self.selection.pop()
-
+        if len(self.selection) and self.selection[-1] == item:
+            item.unselect()
+            self.selection.pop()
         elif item not in self.selection and \
                 (not self.selection or
                     self.neighbours(
